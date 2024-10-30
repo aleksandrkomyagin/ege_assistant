@@ -1,0 +1,39 @@
+version: "3.12"
+
+volumes:
+  postgres_data:
+  redis_volume:
+
+services:
+  redis:
+    image: redis:7.0.1-alpine
+    container_name: ege_assistant_redis
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_volume:/data
+
+  db:
+    image: postgres:15.2-alpine
+    container_name: ege_assistant_db
+    restart: always
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+
+  bot:
+    container_name: ege_assistant_bot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    volumes:
+      - ./ege_assistant_bot/database/migrations:/bot/ege_assistant_bot/database/migrations
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
